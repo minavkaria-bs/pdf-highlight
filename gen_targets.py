@@ -10,6 +10,8 @@ assumption (x*pageWidth, y*pageHeight from the top-left corner).
 """
 import sys
 import json
+import io
+import contextlib
 import fitz  # pymupdf
 
 path = sys.argv[1]
@@ -60,9 +62,12 @@ for pno in range(min(max_pages, doc.page_count)):
             n["area"] = round(n["w"] * n["h"], 4)
             page_info["images"].append(n)
 
-    # Tables (PyMuPDF >= 1.23).
+    # Tables (PyMuPDF >= 1.23). find_tables() prints a one-line banner to stdout;
+    # capture it so our stdout stays pure JSON (safe to redirect with `> targets.json`).
     try:
-        for i, tbl in enumerate(page.find_tables().tables):
+        with contextlib.redirect_stdout(io.StringIO()):
+            tables = list(page.find_tables().tables)
+        for i, tbl in enumerate(tables):
             page_info["tables"].append(norm(fitz.Rect(tbl.bbox)))
     except Exception as e:
         page_info["tables_error"] = str(e)

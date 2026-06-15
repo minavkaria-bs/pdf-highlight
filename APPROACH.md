@@ -139,6 +139,63 @@ production question. The mental model: separate the **target descriptor** from i
 - Handle **page rotation** when normalizing.
 - Store **fractions**, not PDF points — the viewer multiplies by rendered pixels.
 
+### The `gen_targets.py` extractor + sample output
+
+[`gen_targets.py`](gen_targets.py) is the concrete, offline implementation of the **Level-1**
+strategy above — it grounds `highlightData.ts` in the *real* document. Run it once per PDF:
+
+```bash
+python gen_targets.py public/sample.pdf 8 > fixture-coords.json
+```
+
+**What it does, per page:**
+
+1. Read the page rect → `width`/`height` (PDF points) and `rotation`.
+2. **Images** — `get_images(full=True)` → `get_image_rects(xref)` for each; drop sub-8px
+   decorations, dedupe by rounded rect, normalize to 0..1, record `area`.
+3. **Tables** — `find_tables().tables` → each table's `bbox`, normalized. (PyMuPDF prints a
+   one-line banner here; the script mutes it so stdout stays pure JSON.)
+4. **Text** — `get_text("text")`, kept verbatim so you can pick `phrase`/`value` targets.
+
+Every coordinate is divided by page width/height → **0..1 fractions, top-left origin** →
+resolution-independent and drops straight into a `rect` target.
+
+A full sample for `public/sample.pdf` (first 8 pages) is checked in at
+[`fixture-coords.json`](fixture-coords.json). Trimmed:
+
+```jsonc
+{
+  "pageCount": 311,
+  "pages": [
+    {
+      "page": 1, "rotation": 0, "width": 612.0, "height": 792.0,
+      "images": [
+        { "x": 0.0575, "y": 0.0,    "w": 0.8915, "h": 0.1323, "area": 0.1179 }, // letterhead band
+        { "x": 0.0506, "y": 0.9042, "w": 0.8982, "h": 0.08,   "area": 0.0719 }  // footer bar
+      ],
+      "tables": [
+        { "x": 0.1752, "y": 0.1777, "w": 0.6881, "h": 0.0915 }  // → the `tbl-exchange` target
+      ],
+      "text": "To,  Date: 26th August 2025 … (BSE Scrip Code: 543270) … (NSE Symbol: MTARTECH) … Dear Sir/Madam, …"
+    }
+    // … pages 2–8 …
+  ]
+}
+```
+
+**Turning that into a target** ([`src/pdf/highlightData.ts`](src/pdf/highlightData.ts)) —
+copy a rect verbatim; pick the `value`/`phrase` strings out of the `text` field:
+
+```ts
+// p1.tables[0] → the table block; `value` (a string seen in p1.text) pinpoints one cell
+{ id: "tbl-exchange", page: 1, kind: "rect", subtype: "table",
+  rect: { x: 0.1752, y: 0.1777, w: 0.6881, h: 0.0915 }, value: "MTARTECH" }
+```
+
+**Limitations:** `find_tables()` is heuristic (can miss or merge tables); `images` are
+content-stream raster images, not vector charts; for an exact word/value box use
+`page.get_text("words")` or `page.search_for(value)`; scanned PDFs have no text layer → OCR.
+
 ## 8. Scope / non-goals (prototype)
 
 In scope: single-page-at-a-time viewing driven by the clicked target; text phrase highlight

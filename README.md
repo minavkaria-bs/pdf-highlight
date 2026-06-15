@@ -79,12 +79,15 @@ verify.mjs                    headless text-matching test against the real PDF
 
 ```bash
 python3 -m venv .venv && ./.venv/bin/pip install pymupdf
-./.venv/bin/python gen_targets.py public/sample.pdf 6   # dumps page dims, images, tables, text
+./.venv/bin/python gen_targets.py public/sample.pdf 8 > fixture-coords.json
 ```
 
-Paste the normalized (0..1) rects into `src/pdf/highlightData.ts` and add `text` targets by
-hand. See [APPROACH.md](APPROACH.md#where-do-the-coordinates-come-from) for the full
-preprocessing strategy.
+This emits per-page dimensions, image rects, table rects, and text as normalized (0..1)
+JSON. A **sample output** for `public/sample.pdf` is checked in at
+[`fixture-coords.json`](fixture-coords.json). Paste the rects into
+[`src/pdf/highlightData.ts`](src/pdf/highlightData.ts) and add `text` targets by hand — see
+[APPROACH.md](APPROACH.md) (“The `gen_targets.py` extractor + sample output”) for how the
+extractor works and how output maps to targets.
 
 ## Tech stack
 
