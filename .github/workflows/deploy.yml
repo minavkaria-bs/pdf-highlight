@@ -25,7 +25,10 @@ jobs:
         with:
           node-version: 22 # Vite 8 needs Node >= 20.19 / 22.12
           cache: npm
-      - run: npm ci
+      # npm install (not `npm ci`): some deps pull platform-specific native bindings
+      # (e.g. @emnapi/*) whose Linux variants a macOS-generated lockfile can't fully
+      # capture, which breaks `npm ci`'s strict sync. install reconciles them.
+      - run: npm install --no-audit --no-fund
       - run: npm run build # tsc -b && vite build  (base = /pdf-highlight/)
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
