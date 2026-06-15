@@ -46,7 +46,13 @@ export default function App() {
       </aside>
 
       <main className="viewer">
-        <PdfViewer file="/sample.pdf" active={active} width={width} />
+        {/* BASE_URL is "/" in dev and "/pdf-highlight/" in the Pages build, so the PDF
+            (in public/) resolves correctly in both. */}
+        <PdfViewer
+          file={`${import.meta.env.BASE_URL}sample.pdf`}
+          active={active}
+          width={width}
+        />
       </main>
     </div>
   );
