@@ -1,0 +1,156 @@
+:root {
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  color: #1a1a1a;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: #f4f5f7;
+}
+
+.app {
+  display: flex;
+  gap: 24px;
+  padding: 24px;
+  align-items: flex-start;
+}
+
+.sidebar {
+  position: sticky;
+  top: 24px;
+  min-width: 270px;
+  max-width: 300px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.sidebar h1 {
+  font-size: 18px;
+  margin: 0;
+}
+
+.hint {
+  color: #555;
+  font-size: 13px;
+  line-height: 1.45;
+  margin: 0;
+}
+
+.hint.small {
+  font-size: 12px;
+  color: #777;
+}
+
+.viewer {
+  flex: 1;
+  min-width: 0;
+}
+
+/* Link list */
+nav.links {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+nav.links button.link {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  text-align: left;
+  padding: 8px 10px;
+  border: 1px solid #d6d6db;
+  border-radius: 8px;
+  background: #fff;
+  cursor: pointer;
+  font-size: 13px;
+  line-height: 1.3;
+}
+
+nav.links button.link:hover {
+  background: #f0f3fb;
+  border-color: #b9c6ec;
+}
+
+nav.links button.link.on {
+  border-color: #2563eb;
+  background: #e8f0ff;
+}
+
+nav.links .badge {
+  flex: none;
+  font-size: 11px;
+  font-weight: 600;
+  color: #2563eb;
+  background: #e8f0ff;
+  border-radius: 4px;
+  padding: 1px 6px;
+}
+
+nav.links .label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Width toggle */
+.width-toggle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: #555;
+}
+
+.width-toggle button {
+  padding: 4px 10px;
+  border: 1px solid #d6d6db;
+  border-radius: 6px;
+  background: #fff;
+  cursor: pointer;
+}
+
+.width-toggle button.on {
+  border-color: #2563eb;
+  background: #e8f0ff;
+  color: #2563eb;
+  font-weight: 600;
+}
+
+/* PDF page frame */
+.viewer .react-pdf__Page {
+  box-shadow: 0 2px 16px rgba(0, 0, 0, 0.18);
+  background: #fff;
+}
+
+/* ---- Text highlight ----
+   The text layer's spans are transparent (real text is on the canvas beneath), so a
+   <mark> background reads as a highlighter stroke. Starts transparent, lights up while
+   body.flash-active, then fades out. */
+mark.pdf-flash {
+  background-color: transparent;
+  color: inherit;
+  border-radius: 2px;
+  padding: 0;
+  /* fade-out timing (when flash-active is removed) */
+  transition: background-color 1500ms ease-out;
+}
+
+body.flash-active mark.pdf-flash {
+  background-color: rgba(255, 218, 0, 0.7);
+  /* quick light-up timing (when flash-active is added) */
+  transition: background-color 180ms ease-in;
+}
+
+/* A "value inside a rect" (e.g. one value within a table block) — distinct orange so
+   it stands out against the block's outline. Must come AFTER the rule above (equal
+   specificity, later wins). */
+body.flash-active mark.pdf-flash-value {
+  background-color: rgba(255, 120, 0, 0.6);
+  outline: 2px solid rgba(225, 80, 0, 0.95);
+  border-radius: 2px;
+}
