@@ -20,8 +20,8 @@ export default function App() {
       <aside className="sidebar">
         <h1>Temporary PDF Highlight</h1>
         <p className="hint">
-          Click a link to jump to its page and flash the target (text, image, table,
-          or region). The highlight fades after ~2.5s.
+          Scroll the document freely. Click a link to scroll to its page and flash the
+          target (text, image, table, or region); the highlight fades after ~2.5s.
         </p>
 
         <LinkList active={active?.target ?? null} onPick={pick} />

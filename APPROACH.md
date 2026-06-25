@@ -65,19 +65,25 @@ Design decisions:
 
 ```
 App  (active target + nonce, page-width toggle)
-└── PdfViewer (file, active, width)
-    ├── Document
-    │   └── Page (key = `${page}-${nonce}`)
-    │        ├── canvas layer        (react-pdf)
-    │        ├── text layer          (customTextRenderer wraps matches in <mark>)
-    │        └── annotation layer    (react-pdf)
-    └── RectHighlight (absolute overlay; rendered when kind === "rect")
+└── PdfViewer (file, active, width)  — scrollable container; owns the flash lifecycle
+    └── Document
+        └── LazyPage × N   (one per page; mounts the heavy <Page> only when near viewport)
+             ├── canvas / text / annotation layers (react-pdf)
+             ├── text-layer <mark>s  (customTextRenderer — only on the target page)
+             └── RectHighlight        (absolute overlay — only on a rect target)
 LinkList (the buttons that set the active target)
 ```
 
-A click sets `{ target, nonce }` on `App`. **`nonce` increments on every click** so
-re-clicking the same link re-triggers the flash: it's part of the `<Page>` `key`, forcing a
-remount that re-runs the whole highlight pipeline.
+The document scrolls continuously: `PdfViewer` renders one `LazyPage` per page inside a
+scrollable `<div>`, and each LazyPage uses an `IntersectionObserver` to mount `<Page>` only
+when within ~800px of the viewport (a same-height skeleton holds its place otherwise), so all
+311 pages stay light.
+
+A click sets `{ target, nonce }` on `App`. `PdfViewer` scrolls the target page into view
+(instantly — a long smooth scroll gets cancelled when lazy pages change height mid-animation)
+and passes it the `target`. **`nonce` increments on every click** and is part of that page's
+`<Page>` `key`, forcing a remount that re-runs the whole highlight pipeline — so re-clicking
+the same link re-triggers the flash.
 
 ## 6. Timing model (where most PDF-highlight bugs live)
 
@@ -198,14 +204,15 @@ content-stream raster images, not vector charts; for an exact word/value box use
 
 ## 8. Scope / non-goals (prototype)
 
-In scope: single-page-at-a-time viewing driven by the clicked target; text phrase highlight
-incl. multi-line wraps; image/table/region via one overlay rect; one value highlighted
-inside a table block; temporary flash + fade + scroll-into-view; alignment across page
-widths.
+In scope: continuous vertical scroll with lazy (IntersectionObserver-gated) page rendering;
+click-to-jump to the target page; text phrase highlight incl. multi-line wraps;
+image/table/region via one overlay rect; one value highlighted inside a table block;
+temporary flash + fade + scroll-into-view; alignment across page widths.
 
 Out of scope (TODOs): persisting highlights into the PDF; full cell/row-grid table
-highlighting; continuous-scroll multi-page virtualization; robust scanned/OCR matching
-(needs Level-2 word bboxes); server-side pre-rasterization of heavy pages.
+highlighting; a recycling/windowing library and accurate per-page height pre-measurement
+(we mount-when-near with an A4 estimate); robust scanned/OCR matching (needs Level-2 word
+bboxes); server-side pre-rasterization of heavy pages.
 
 ## 9. Library rationale
 

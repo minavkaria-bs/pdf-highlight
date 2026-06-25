@@ -73,16 +73,25 @@ per subtype. `opacity` transitions for the fade; `scrollIntoView` on activation.
 prop (used when a `value` is highlighted inside) drops the fill so the inner value shows
 cleanly through an outline-only box. `zIndex: 3` keeps it above the canvas/text layers.
 
-### `src/pdf/PdfViewer.tsx` — the core
-- Derives `matchPhrase` = a text target's `phrase` **or** a rect target's `value`, and
-  `markClass` (rect values use `pdf-flash-value` for a distinct color).
-- `onGetTextSuccess` → builds ranges + finds matches for `matchPhrase` (warns, never throws,
-  on no match).
-- `customTextRenderer` → wraps matches via `renderItemHtml`.
-- `onRenderSuccess` → captures pixel dims; flashes rect targets.
-- `onRenderTextLayerSuccess` → scrolls text targets into view; (re)flashes once `<mark>`s are
-  in the DOM.
-- `<Page key={`${page}-${nonce}`}>` → remounts on page change **or** repeat click.
+### `src/pdf/PdfViewer.tsx` — the scroll container
+Renders one `LazyPage` per page inside a scrollable `<div>` (the IntersectionObserver root),
+owns the flash lifecycle (`useTemporaryHighlight`), and on each click scrolls the target page
+into view with `scrollIntoView({ behavior: "instant" })`. **Instant, not smooth:** a long
+smooth scroll gets cancelled when lazy pages mount and change height mid-animation; the
+instant jump also brings an unmounted target page into view so its observer mounts it.
+
+### `src/pdf/LazyPage.tsx` — one page (lazy render + highlight)
+- An `IntersectionObserver` (rootMargin `800px`) toggles `visible`; when false it renders a
+  same-height skeleton instead of `<Page>`, so 311 pages stay light and the scrollbar is
+  stable (placeholder height = last rendered height, or an A4 estimate before first render).
+- Highlight machinery runs **only when this page is the active target** (`target` prop set):
+  derives `matchPhrase` (a text `phrase` or a rect `value`) + `markClass`; `onGetTextSuccess`
+  builds ranges + finds matches (warns, never throws, on no match); `customTextRenderer` wraps
+  matches via `renderItemHtml`; `onRenderSuccess` captures dims (+ flashes rect targets);
+  `onRenderTextLayerSuccess` centers the first `<mark>` + flashes.
+- The target page's `<Page key={`hl-${nonce}`}>` remounts on every (re)click to re-run the
+  pipeline; non-target pages keep a stable key. `RectHighlight` overlays the page for a rect
+  target.
 
 ### `src/pdf/LinkList.tsx` / `src/App.tsx` / `src/styles.css`
 The demo harness: a list of buttons that set `{ target, nonce }`, a 800/600 width toggle,

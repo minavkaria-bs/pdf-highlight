@@ -1,9 +1,9 @@
 # Temporary PDF Highlight on Link Click
 
-A runnable **Vite + React + TypeScript** prototype: clicking a link jumps to a page in a
-PDF and **temporarily flashes** a target on that page (flash → fade, not persisted). The
-target can be a **text phrase**, an **image**, a **table** (block, optionally pinpointing
-one value inside it), or an **arbitrary region**.
+A runnable **Vite + React + TypeScript** prototype: the PDF **scrolls continuously**, and
+clicking a link jumps to a page and **temporarily flashes** a target on it (flash → fade,
+not persisted). The target can be a **text phrase**, an **image**, a **table** (block,
+optionally pinpointing one value inside it), or an **arbitrary region**.
 
 The PDF is rendered with **[react-pdf](https://github.com/wojtekmaj/react-pdf)** (a thin
 wrapper over PDF.js) so the app owns the DOM and can draw over it — a native
@@ -69,7 +69,8 @@ src/
     useTemporaryHighlight.ts  flash lifecycle (timer + body class)
     textMatch.ts              multi-span, drift-free phrase matching → <mark>
     RectHighlight.tsx         absolutely-positioned overlay for image/table/region
-    PdfViewer.tsx             Document/Page + both highlight renderers + timing
+    PdfViewer.tsx             scrollable Document; lazily lists pages, routes the highlight
+    LazyPage.tsx              one page: IntersectionObserver-gated render + per-page highlight
     LinkList.tsx              the clickable links
 gen_targets.py                PyMuPDF script to (re)generate fixture coords from a PDF
 verify.mjs                    headless text-matching test against the real PDF
@@ -101,8 +102,10 @@ react-pdf — a version mismatch breaks the worker; see IMPLEMENTATION.md).
   a clean single photo on a lighter page (page 5). Text extraction is unaffected.
 - Cell-level table highlighting is supported as "one value inside the block"; full
   row/column grids are out of scope (see APPROACH.md §scope).
-- Single-page-at-a-time viewing (driven by the clicked target's page); no continuous-scroll
-  virtualization.
+- The document scrolls continuously; pages are rendered lazily (an IntersectionObserver
+  mounts only pages within ~800px of the viewport, so all 311 stay light). Link clicks jump
+  **instantly** to the target page — a long smooth scroll gets cancelled when lazy pages
+  change height mid-animation — then center the highlight once the page has rendered.
 
 ## License
 
